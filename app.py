@@ -54,11 +54,10 @@ def container (movie_ind,img_p,overview_hp):
    with st.container():
       cols = st.columns(4)
       
-      st.write(st.session_state.selected_movie)
-      st.write(st.session_state.bool)
+      
       st.session_state.bool = False 
       st.session_state.selected_movie=None
-      st.write(f"after-{st.session_state.bool}")
+      
 
       for i in range(1,len(img_p)):
          with cols[i-1]:
@@ -68,8 +67,7 @@ def container (movie_ind,img_p,overview_hp):
             if st.button(f" {movies.loc[movie_ind[i], 'title']}"):
                      st.session_state.selected_movie = movies.loc[movie_ind[i], 'title']
                      st.session_state.bool = True
-                     st.write(f"after-{st.session_state.selected_movie}")
-                     st.write(f"after-{st.session_state.bool}")
+                     
                      st.rerun() 
 
 
