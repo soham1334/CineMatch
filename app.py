@@ -1,75 +1,130 @@
 import streamlit as st
-import pickle
-import requests
-
-def fetch_poster(movie_id):
-     url = "https://api.themoviedb.org/3/movie/{}?api_key=c7ec19ffdd3279641fb606d19ceb9bb1&language=en-US".format(movie_id)
-     data=requests.get(url)
-     data=data.json()
-     poster_path = data['poster_path']
-     full_path = "https://image.tmdb.org/t/p/w500/"+poster_path
-     return full_path
-
-movies = pickle.load(open("movies_list.pkl", 'rb'))
-similarity = pickle.load(open("similarity.pkl", 'rb'))
-movies_list=movies['title'].values
-
-st.header("Movie Recommender System")
-
-import streamlit.components.v1 as components
-
-imageCarouselComponent = components.declare_component("image-carousel-component", path="frontend/public")
+import pandas as pd
+import numpy as np
+import requests as rq
 
 
-imageUrls = [
-    fetch_poster(1632),
-    fetch_poster(299536),
-    fetch_poster(17455),
-    fetch_poster(2830),
-    fetch_poster(429422),
-    fetch_poster(9722),
-    fetch_poster(13972),
-    fetch_poster(240),
-    fetch_poster(155),
-    fetch_poster(598),
-    fetch_poster(914),
-    fetch_poster(255709),
-    fetch_poster(572154)
+
+st.markdown("""
+    <div style="text-align: center;">
+        <h1 style="color: white; font-size: 50px;">WELCOME TO <span style = "color :yellow;">CINEMATCH </span> </h1>
+    </div>
+""", unsafe_allow_html=True)
+
+
+@st.cache_data
+def load_data():
+    movies = pd.read_csv(r"C:\Users\soham\OneDrive\Desktop\PY\movie.csv")
+    cosine_vect = pd.read_csv(r"C:\Users\soham\OneDrive\Desktop\PY\cosine_vect").to_numpy()
+    return movies, cosine_vect
+
+movies, cosine_vect = load_data()
+
+Options = movies['title']
+selected_movie = st.selectbox("SELECT  MOVIE",Options ,placeholder = "Search for movie" )
+
+
+if "selected_movie" not in st.session_state:
+   st.session_state.selected_movie = movies['title'].iloc[2]
+   st.session_state.bool = False
+elif st.session_state.bool:
+   selected_movie =  st.session_state.selected_movie
    
-    ]
 
 
-imageCarouselComponent(imageUrls=imageUrls, height=200)
-selectvalue=st.selectbox("Select movie from dropdown", movies_list)
+def container (movie_ind,img_p,overview_hp):
+   
+   with st.container():
+      
+      col1,col2 = st.columns(2)
 
-def recommend(movie):
-    index=movies[movies['title']==movie].index[0]
-    distance = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda vector:vector[1])
-    recommend_movie=[]
-    recommend_poster=[]
-    for i in distance[1:6]:
-        movies_id=movies.iloc[i[0]].id
-        recommend_movie.append(movies.iloc[i[0]].title)
-        recommend_poster.append(fetch_poster(movies_id))
-    return recommend_movie, recommend_poster
+      with col1:
+         st.markdown(f'<h1 style="font-size: 28px; text-align: center;">{movies.loc[movie_ind[0], "title"]}</h1>', unsafe_allow_html=True)
+         st.write(overview_hp[0][0:350])
+         if st.button('Watch'):
+            st.markdown(f'<a href="{overview_hp[1]}" target="_blank">Click here to watch</a>', unsafe_allow_html=True)
+      
+      with col2:
+         st.image(f"https://image.tmdb.org/t/p/w500{img_p[0]}",width = 200) 
+
+   st.markdown('<hr style="margin-top: 10px; margin-bottom: 5px;">', unsafe_allow_html=True)   
+   st.markdown(f'<h2 style="font-size: 30px;">Recomended Movies</h2>', unsafe_allow_html=True)
+   st.markdown('<hr style="margin-top: 0px; margin-bottom: 20px;">', unsafe_allow_html=True)
+
+   with st.container():
+      cols = st.columns(4)
+      
+      st.write(st.session_state.selected_movie)
+      st.write(st.session_state.bool)
+      st.session_state.bool = False 
+      st.session_state.selected_movie=None
+      st.write(f"after-{st.session_state.bool}")
+
+      for i in range(1,len(img_p)):
+         with cols[i-1]:
+
+            st.image(f"https://image.tmdb.org/t/p/w500{img_p[i]}", width=400)
+            
+            if st.button(f" {movies.loc[movie_ind[i], 'title']}"):
+                     st.session_state.selected_movie = movies.loc[movie_ind[i], 'title']
+                     st.session_state.bool = True
+                     st.write(f"after-{st.session_state.selected_movie}")
+                     st.write(f"after-{st.session_state.bool}")
+                     st.rerun() 
 
 
 
-if st.button("Show Recommend"):
-    movie_name, movie_poster = recommend(selectvalue)
-    col1,col2,col3,col4,col5=st.columns(5)
-    with col1:
-        st.text(movie_name[0])
-        st.image(movie_poster[0])
-    with col2:
-        st.text(movie_name[1])
-        st.image(movie_poster[1])
-    with col3:
-        st.text(movie_name[2])
-        st.image(movie_poster[2])
-    with col4:
-        st.text(movie_name[3])
-        st.image(movie_poster[3])
-    with col5:
-        st.text(movie_name[4])
-        st.image(movie_poster[4])
+
+
+
+
+
+def run (selected_movie):
+   
+   img_p = []
+   overview_hp = []
+   movie_ind = [] 
+      
+
+
+   index = movies.index[movies['title'] == selected_movie]
+   c_v = cosine_vect[index][0]
+    
+   s_cv = sorted(enumerate(c_v) ,key = lambda x:x[1] ,reverse = True)
+    
+   for i in np.arange(5):
+      pos = s_cv[i][0]
+      movie_ind.append(pos)
+
+   img_p = []
+   overview_hp = []
+
+   
+   for i in range(0,len(movie_ind)):
+      ind = movie_ind[i]
+      movies_id = movies.loc[ind,'movie_id']
+   
+      movie_url = f"https://api.themoviedb.org/3/movie/{movies_id}?api_key=8265bd1679663a7ea12ac168da84d2e8"
+      movie_url_response = rq.get(movie_url)
+      movie_details = movie_url_response.json()
+      
+
+      image_path = movie_details.get('poster_path')
+      img_p.append(image_path)
+      
+      if i==0:
+         overview_hp.append(movie_details.get('overview'))
+         overview_hp.append(movie_details.get('hompepage'))
+
+   container(movie_ind,img_p,overview_hp)
+
+run(selected_movie)
+
+
+
+
+  
+
+               
+            
+            
