@@ -14,8 +14,8 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    movies = pd.read_csv(r"C:\Users\soham\OneDrive\Desktop\PY\movie.csv")
-    cosine_vect = pd.read_csv(r"C:\Users\soham\OneDrive\Desktop\PY\cosine_vect").to_numpy()
+    movies = pd.read_csv("movie.csv")
+    cosine_vect = pd.read_csv("cosine_vect").to_numpy()
     return movies, cosine_vect
 
 movies, cosine_vect = load_data()
