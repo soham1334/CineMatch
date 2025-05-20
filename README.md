@@ -3,7 +3,7 @@
 CineMatch is a content-based movie recommendation system built with Streamlit, offering intelligent movie suggestions based on metadata like genre, cast, keywords, and more. It provides an interactive experience with movie poster previews, overviews, and direct links to official sites.
 
 ### 🌐 Live Demo: https://cinematch-r5qyyuswzgqhz2bfbcwscu.streamlit.app/
-### 🌙 Best viewed in dark theme for optimal visual experience.
+
 
 ## 📌 Features
 🔍 **Movie Search**: Choose from a dropdown list of available movies.
